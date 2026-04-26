@@ -1,0 +1,7 @@
+[
+  {
+    "name": "Meno budovy",
+    "description": "Nájdi názov budovy. Ak je budova známa pod viacerými názvami, uveď všetky.",
+    "synonyms": ["Unifikovaný názov KP", "Zaužívaný názov"]
+  }
+]

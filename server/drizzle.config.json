@@ -1,0 +1,8 @@
+{
+  "schema": "./src/db/schema.ts",
+  "dialect": "postgresql",
+  "out": "./drizzle",
+  "dbCredentials": {
+    "url": "postgres://postgres:rag_password@localhost:5432/building_rag"
+  }
+}

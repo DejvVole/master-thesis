@@ -1,0 +1,158 @@
+[
+  {
+    "name": "Meno budovy",
+    "description": "Nájdi názov budovy. Ak je budova známa pod viacerými názvami, uveď všetky.",
+    "synonyms": ["Unifikovaný názov KP", "Zaužívaný názov"]
+  },
+  {
+    "name": "Adresa",
+    "description": "Nájdi čo najpresnejšiu adresu. Aj mesto a okres, ak je to možné. Hľadaj aktuálnu adresu.",
+    "synonyms": ["Ulica", "Číslo domu", "Mesto", "Okres"]
+  },
+  {
+    "name": "GPS súradnice",
+    "description": "",
+    "synonyms": ["Zemepisná šírka", "Zemepisná dĺžka", "Latitúda", "Longitúda"]
+  },
+  {
+    "name": "Rok výstavby",
+    "description": "Nájdi rok, kedy bola budova postavená, dokončená alebo kedy sa datuje jej vznik.",
+    "synonyms": ["Rok dokončenia", "kolaudácia", "postavenie", "vznik"]
+  },
+  {
+    "name": "Aktuálny vlastník",
+    "description": "",
+    "synonyms": ["majiteľ", "držiteľ", "list vlastníctva"]
+  },
+  {
+    "name": "Rok zaradenia",
+    "description": "",
+    "synonyms": ["Rok pridania", "Dátum zaradenia", "Rok evidencie"]
+  },
+  {
+    "name": "Historický význam",
+    "description": "",
+    "synonyms": [
+      "Historická hodnota",
+      "Kultúrny význam",
+      "Kultúrna hodnota",
+      "Význam v dejinách"
+    ]
+  },
+  {
+    "name": "Záznamy o obnove",
+    "description": "Nájdi všetky dostupné záznamy o opravách, údržbe, renováciách, rekonštrukciách alebo prestavbách budovy. Rozpíš to formou rok - popis zásahu.",
+    "synonyms": ["Obnova", "údržba", "renovácie", "rekonštrukcie", "prestavby"]
+  },
+  {
+    "name": "Materiál vonkajšej fasády",
+    "description": "",
+    "synonyms": ["obvodové steny", "vonkajšia fasáda"]
+  },
+  {
+    "name": "Typ strechy",
+    "description": "",
+    "synonyms": ["Druh strechy", "Typ krytiny", "Konštrukcia strechy"]
+  },
+  {
+    "name": "Materiál interiéru",
+    "description": "Všetky materiály, ktoré sú spomínané v súvislosti s interiérom budovy alebo jej časťami, napríklad materiály stropov, podláh, schodov, stien a podobne.",
+    "synonyms": []
+  },
+  {
+    "name": "Iné materiály",
+    "description": "Všetky materiály, ktoré sú spomínané v súvislosti s budovou alebo jej časťami, ale nespadajú do kategórií vonkajšia fasáda, typ strechy alebo materiál interiéru.",
+    "synonyms": ["Doplnkové materiály", "Ďalšie materiály"]
+  },
+  {
+    "name": "Aktuálny stav",
+    "description": "",
+    "synonyms": ["Súčasný stav"]
+  },
+  {
+    "name": "Kritické miesta",
+    "description": "",
+    "synonyms": ["Zraniteľné miesta", "Ohrozené časti", "Kritické oblasti"]
+  },
+  {
+    "name": "Potrebné sanácie",
+    "description": "",
+    "synonyms": [
+      "Neodkladné opravy",
+      "Nutné opravy",
+      "Potrebné opravy",
+      "Odporúčané zásahy"
+    ]
+  },
+  {
+    "name": "Súčasné fotografie",
+    "description": "",
+    "synonyms": ["Aktuálne fotografie", "Súčasné snímky"]
+  },
+  {
+    "name": "Historické fotografie",
+    "description": "",
+    "synonyms": ["Staré fotografie", "Fotografie z minulosti"]
+  },
+  {
+    "name": "Plány a schémy",
+    "description": "",
+    "synonyms": ["Architektonické plány", "Stavebné schémy"]
+  },
+  {
+    "name": "Harmonogram údržby",
+    "description": "",
+    "synonyms": ["Plán údržby", "Harmonogram opráv"]
+  },
+  {
+    "name": "Revízne záznamy",
+    "description": "",
+    "synonyms": ["Záznamy o revíziách", "Protokoly o revíziách"]
+  },
+  {
+    "name": "Ochranné zóny",
+    "description": "",
+    "synonyms": ["Pásmo ochrany", "Chránené územia", "Ochranné pásmo", "MPR"]
+  },
+  {
+    "name": "Povolenia na zásahy",
+    "description": "",
+    "synonyms": [
+      "Povolenia na rekonštrukciu",
+      "Povolenia na opravy",
+      "Súhlas na stavebné práce"
+    ]
+  },
+  {
+    "name": "Legislatívne obmedzenia",
+    "description": "Spadá budova pod nejaké špeciálne legislatívne obmedzenia alebo ochranu?",
+    "synonyms": [
+      "Zákonné obmedzenia",
+      "Právne regulácie",
+      "Úradné nariadenia",
+      "Regulácie"
+    ]
+  },
+  {
+    "name": "Digitálne výkresy",
+    "description": "Popíš dostupnosť a kvalitu digitálnych výkresov budovy.",
+    "synonyms": ["CAD výkresy", "Digitálne plány"]
+  },
+  {
+    "name": "Archeologické výskumy",
+    "description": "Boli na lokalite vykonané archeologické výskumy? Ak áno, aké nálezy boli objavené?",
+    "synonyms": [
+      "Archeologické nálezy",
+      "Archeologické prieskumy",
+      "NKP",
+      "KPU",
+      "MÚOP",
+      "PÚ SR"
+    ]
+  },
+  {
+    "name": "Chemické analýzy",
+    "description": "",
+    "synonyms": ["Chemické testy", "Laboratórne analýzy"]
+  }
+]

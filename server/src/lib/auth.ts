@@ -1,0 +1,52 @@
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { admin, magicLink } from "better-auth/plugins";
+import { db } from "../db";
+import * as schema from "../db/auth-schema";
+import { sendInvitationEmail } from "../services/emailService";
+
+export const auth = betterAuth({
+  secret: process.env.BETTER_AUTH_SECRET,
+  baseURL: process.env.CLIENT_URL || "http://localhost:3001",
+  database: drizzleAdapter(db, {
+    provider: "pg",
+    schema: {
+      user: schema.user,
+      session: schema.session,
+      account: schema.account,
+      verification: schema.verification,
+    },
+  }),
+  emailAndPassword: {
+    enabled: true,
+    minPasswordLength: 8,
+  },
+  plugins: [
+    admin({
+      defaultRole: "user",
+      adminRoles: ["admin"],
+    }),
+    magicLink({
+      sendMagicLink: async ({ email, token, url }, request) => {
+        // Vytvor URL pre dokončenie registrácie
+        const clientUrl = process.env.CLIENT_URL;
+        const inviteUrl = `${clientUrl}/accept-invite?token=${token}`;
+        await sendInvitationEmail(email, inviteUrl);
+      },
+      expiresIn: 60 * 60 * 24 * 7, // 7 dní
+      disableSignUp: false, // Povoliť vytvorenie nového usera
+    }),
+  ],
+  session: {
+    expiresIn: 60 * 60 * 24 * 7, // 7 dní
+    updateAge: 60 * 60 * 24, // aktualizácia každých 24 hodín
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60, // 5 minút cache
+    },
+  },
+  trustedOrigins: (process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(",")
+    : ["http://localhost:5173", "http://localhost:3000"]
+  ).concat(process.env.CLIENT_URL ? [process.env.CLIENT_URL] : []),
+});

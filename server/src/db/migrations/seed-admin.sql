@@ -1,0 +1,32 @@
+-- Vytvorenie prvého admin používateľa
+-- POZOR: Zmeň heslo pred spustením v produkcii!
+-- Heslo je hashované cez bcrypt - toto je len placeholder
+
+-- Pre vytvorenie prvého admina odporúčam použiť tento Node.js skript:
+-- npx tsx server/src/scripts/create-admin.ts
+
+-- Alebo manuálne cez Better Auth CLI:
+-- V server priečinku spusti: npx @better-auth/cli generate
+
+-- Príklad SQL (heslo musíš vygenerovať cez bcrypt):
+-- INSERT INTO "user" (id, name, email, email_verified, role, created_at, updated_at)
+-- VALUES (
+--   'admin-001',
+--   'Admin',
+--   'admin@example.com',
+--   true,
+--   'admin',
+--   NOW(),
+--   NOW()
+-- );
+--
+-- INSERT INTO "account" (id, account_id, provider_id, user_id, password, created_at, updated_at)
+-- VALUES (
+--   'account-admin-001',
+--   'admin@example.com',
+--   'credential',
+--   'admin-001',
+--   '$2a$10$...hashované_heslo...',
+--   NOW(),
+--   NOW()
+-- );
