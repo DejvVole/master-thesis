@@ -35,6 +35,23 @@ interface FiltersProps {
 	handleReset: () => void;
 }
 
+type ExpandableSection =
+	| typeof FilterKeyMap.rokVystavby
+	| typeof FilterKeyMap.obdobie
+	| typeof FilterKeyMap.typStrechy
+	| typeof FilterKeyMap.materialFasady
+	| typeof FilterKeyMap.materialInterieru
+	| typeof FilterKeyMap.aktualnyStav;
+
+const INITIAL_EXPANDED: Record<ExpandableSection, boolean> = {
+	[FilterKeyMap.rokVystavby]: true,
+	[FilterKeyMap.obdobie]: true,
+	[FilterKeyMap.typStrechy]: true,
+	[FilterKeyMap.materialFasady]: true,
+	[FilterKeyMap.materialInterieru]: true,
+	[FilterKeyMap.aktualnyStav]: true,
+};
+
 export default function Filters({
 	filters,
 	setFilters,
@@ -54,18 +71,8 @@ export default function Filters({
 	});
 
 	// Filter panel expanded states
-	const [expandedSections, setExpandedSections] = useState<
-		Record<FilterKeyMap, boolean>
-	>({
-		[FilterKeyMap.rokVystavby]: true,
-		[FilterKeyMap.rokVystavbyOd]: true,
-		[FilterKeyMap.rokVystavbyDo]: true,
-		[FilterKeyMap.typStrechy]: true,
-		[FilterKeyMap.materialFasady]: true,
-		[FilterKeyMap.materialInterieru]: true,
-		[FilterKeyMap.obdobie]: true,
-		[FilterKeyMap.aktualnyStav]: true,
-	});
+	const [expandedSections, setExpandedSections] =
+		useState<Record<ExpandableSection, boolean>>(INITIAL_EXPANDED);
 
 	const handleFilterChange = (key: keyof BuildingFilters, value: string) => {
 		if (value === '') {
@@ -80,7 +87,7 @@ export default function Filters({
 		});
 	};
 
-	const toggleSection = (section: FilterKeyMap) => {
+	const toggleSection = (section: ExpandableSection) => {
 		setExpandedSections((prev) => ({
 			...prev,
 			[section]: !prev[section],
@@ -144,7 +151,7 @@ export default function Filters({
 				{/* YEAR BUILT FILTER */}
 				<Box mb="6" pb="6">
 					<Button
-						onClick={() => toggleSection('rokVystavby' as FilterKeyMap)}
+						onClick={() => toggleSection(FilterKeyMap.rokVystavby)}
 						w="full"
 						justifyContent="space-between"
 						bg="transparent"

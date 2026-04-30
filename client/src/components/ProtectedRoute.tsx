@@ -1,13 +1,9 @@
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { Flex, Spinner } from '@chakra-ui/react';
 import { useSession } from '../auth';
 
-interface ProtectedRouteProps {
-	children: React.ReactNode;
-}
-
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+export const ProtectedRoute: React.FC = () => {
 	const { data: session, isPending } = useSession();
 	const location = useLocation();
 
@@ -19,12 +15,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 		);
 	}
 
-	// Ak nie je používateľ prihlásený, presmeruj na login
 	if (!session?.user) {
 		return <Navigate to="/login" state={{ from: location }} replace />;
 	}
 
-	return <>{children}</>;
+	return <Outlet />;
 };
 
 export default ProtectedRoute;

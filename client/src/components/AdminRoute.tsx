@@ -1,21 +1,11 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
 import { useSession } from '../auth';
 import { Flex, Spinner } from '@chakra-ui/react';
 
-interface AdminRouteProps {
-	children: React.ReactNode;
-}
-
-/**
- * Komponenta pre chránené admin routy
- * Povoľuje prístup len používateľom s admin rolou
- * Predpokladá, že je už obalená v ProtectedRoute (user je prihlásený)
- */
-export const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
+export const AdminRoute: React.FC = () => {
 	const { data: session, isPending } = useSession();
 
-	// Počkaj kým sa načíta session
 	if (isPending) {
 		return (
 			<Flex minH="100vh" align="center" justify="center">
@@ -24,12 +14,11 @@ export const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
 		);
 	}
 
-	// Ak nie je admin, presmeruj na hlavnú stránku
 	if (session?.user?.role !== 'admin') {
 		return <Navigate to="/" replace />;
 	}
 
-	return <>{children}</>;
+	return <Outlet />;
 };
 
 export default AdminRoute;

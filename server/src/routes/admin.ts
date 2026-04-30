@@ -3,10 +3,7 @@ import { db } from "../db";
 import {
   buildings_info,
   sourceDocuments,
-  documentProcessing,
-  buildingsInfoEmbed,
   buildingsInfoSources,
-  buildingsNormalizedValues,
 } from "../db/schema";
 import { eq, desc, sql, and, asc } from "drizzle-orm";
 import { validate, documentIdParamSchema } from "../middleware/validation";
@@ -16,7 +13,7 @@ const router = Router();
 
 router.get("/documents", async (req, res) => {
   try {
-    const documents = await db
+    const rows = await db
       .select({
         id: sourceDocuments.id,
         fileName: sourceDocuments.fileName,
@@ -25,34 +22,42 @@ router.get("/documents", async (req, res) => {
         processedDate: sourceDocuments.processedDate,
         createdAt: sourceDocuments.createdAt,
         isHidden: sourceDocuments.isHidden,
+        buildingId: buildings_info.id,
+        buildingName: buildings_info.menoBudovy,
+        buildingHidden: buildings_info.isHidden,
       })
       .from(sourceDocuments)
+      .leftJoin(
+        buildings_info,
+        eq(buildings_info.sourceDocumentId, sourceDocuments.id),
+      )
       .orderBy(desc(sourceDocuments.createdAt));
 
-    const documentsWithBuildings = await Promise.all(
-      documents.map(async (doc) => {
-        const building = await db
-          .select({
-            id: buildings_info.id,
-            menoBudovy: buildings_info.menoBudovy,
-            isHidden: buildings_info.isHidden,
-          })
-          .from(buildings_info)
-          .where(eq(buildings_info.sourceDocumentId, doc.id))
-          .limit(1);
+    const documents = rows.map((row) => {
+      const metadata = (row.metadata ?? {}) as Record<string, unknown>;
+      return {
+        id: row.id,
+        fileName: row.fileName,
+        filePath: row.filePath,
+        metadata: row.metadata,
+        processedDate: row.processedDate,
+        createdAt: row.createdAt,
+        isHidden: row.isHidden,
+        inferenceEnabled: (metadata.inference_status as boolean) ?? false,
+        extractedCount: (metadata.extracted_count as number) ?? 0,
+        inferredCount: (metadata.inferred_count as number) ?? 0,
+        missingCount: (metadata.missing_count as number) ?? 0,
+        building: row.buildingId
+          ? {
+              id: row.buildingId,
+              menoBudovy: row.buildingName,
+              isHidden: row.buildingHidden,
+            }
+          : null,
+      };
+    });
 
-        return {
-          ...doc,
-          inferenceEnabled: (doc.metadata as any)?.inference_status ?? false,
-          extractedCount: (doc.metadata as any)?.extracted_count ?? 0,
-          inferredCount: (doc.metadata as any)?.inferred_count ?? 0,
-          missingCount: (doc.metadata as any)?.missing_count ?? 0,
-          building: building[0] || null,
-        };
-      }),
-    );
-
-    res.json(documentsWithBuildings);
+    res.json(documents);
   } catch (error) {
     console.error("Error fetching admin documents:", error);
     res.status(500).json({ error: "Failed to fetch documents" });
@@ -108,47 +113,15 @@ router.delete(
     try {
       const { id: documentId } = req.validatedData as { id: number };
 
-      // Get building ID first
-      const building = await db
-        .select({ id: buildings_info.id })
-        .from(buildings_info)
-        .where(eq(buildings_info.sourceDocumentId, documentId))
-        .limit(1);
-
-      if (building.length > 0) {
-        const buildingId = building[0].id;
-
-        // Delete in correct order due to foreign keys
-        // 1. Delete embeddings
-        await db
-          .delete(buildingsInfoEmbed)
-          .where(eq(buildingsInfoEmbed.budovaId, buildingId));
-
-        // 2. Delete source metadata
-        await db
-          .delete(buildingsInfoSources)
-          .where(eq(buildingsInfoSources.budovaId, buildingId));
-
-        // 3. Delete normalized values
-        await db
-          .delete(buildingsNormalizedValues)
-          .where(eq(buildingsNormalizedValues.buildingId, buildingId));
-
-        // 4. Delete building
-        await db
+      await db.transaction(async (tx) => {
+        await tx
           .delete(buildings_info)
-          .where(eq(buildings_info.id, buildingId));
-      }
+          .where(eq(buildings_info.sourceDocumentId, documentId));
 
-      // 5. Delete document processing records
-      await db
-        .delete(documentProcessing)
-        .where(eq(documentProcessing.sourceDocumentId, documentId));
-
-      // 6. Delete source document
-      await db
-        .delete(sourceDocuments)
-        .where(eq(sourceDocuments.id, documentId));
+        await tx
+          .delete(sourceDocuments)
+          .where(eq(sourceDocuments.id, documentId));
+      });
 
       res.json({ success: true, message: "Document deleted successfully" });
     } catch (error) {

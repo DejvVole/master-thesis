@@ -91,33 +91,10 @@ const buildingFields: {
 	{ key: 'chemickeAnalyzy', label: 'Chemické analýzy', category: 'výskum' },
 ];
 
+// `menoBudovy` nie je v `buildingFields` (zobrazuje sa ako nadpis), pridáva sa zvlášť.
 const fieldLabels: Record<string, string> = {
 	menoBudovy: 'Meno budovy',
-	adresa: 'Adresa',
-	gpsSuradnice: 'GPS súradnice',
-	rokVystavby: 'Rok výstavby',
-	aktualnyVlastnik: 'Aktuálny vlastník',
-	rokZaradenia: 'Rok zaradenia',
-	historickyVyznam: 'Historický význam',
-	zaznamyOObnove: 'Záznamy o obnove',
-	materialVonkajsejFasady: 'Materiál vonkajšej fasády',
-	typStrechy: 'Typ strechy',
-	materialInterieru: 'Materiál interiéru',
-	ineMaterialy: 'Iné materiály',
-	aktualnyStav: 'Aktuálny stav',
-	kritickeMiesta: 'Kritické miesta',
-	potrebneSanacie: 'Potrebné sanácie',
-	sucasneFotografie: 'Súčasné fotografie',
-	historickeFotografie: 'Historické fotografie',
-	planyASchemy: 'Plány a schémy',
-	harmonogramUdrzby: 'Harmonogram údržby',
-	revizneZaznamy: 'Revízne záznamy',
-	ochranneZony: 'Ochranné zóny',
-	povoleniaNaZasahy: 'Povolenia na zásahy',
-	legislativneObmedzenia: 'Legislatívne obmedzenia',
-	digitalneVykresy: 'Digitálne výkresy',
-	archeologickeVyskumy: 'Archeologické výskumy',
-	chemickeAnalyzy: 'Chemické analýzy',
+	...Object.fromEntries(buildingFields.map((f) => [f.key, f.label])),
 };
 
 function groupFieldsByCategory(building: Building) {

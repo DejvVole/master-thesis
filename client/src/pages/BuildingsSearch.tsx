@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react';
 import { buildingsApi, type Building } from '../api/buildings';
 import BuildingCard from './building/BuildingCard';
@@ -11,6 +9,7 @@ import { AiOutlineMenu } from 'react-icons/ai';
 import { Box, Flex, Grid, Heading, Icon, Text, VStack } from '@chakra-ui/react';
 import { toaster } from '../components/ui/toaster';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { getErrorMessage } from '../utils/errors';
 
 export default function BuildingsSearch() {
 	const [buildings, setBuildings] = useState<Building[]>([]);
@@ -24,9 +23,10 @@ export default function BuildingsSearch() {
 		try {
 			const data = await buildingsApi.getAll();
 			setBuildings(data);
-		} catch (err: any) {
+		} catch (err) {
 			toaster.error({
 				title: 'Chyba pri načítavaní budov',
+				description: getErrorMessage(err),
 				closable: true,
 			});
 		} finally {
@@ -49,9 +49,10 @@ export default function BuildingsSearch() {
 			}
 
 			setBuildings(data);
-		} catch (err: any) {
+		} catch (err) {
 			toaster.error({
 				title: 'Chyba pri vyhľadávaní',
+				description: getErrorMessage(err),
 				closable: true,
 			});
 		} finally {
