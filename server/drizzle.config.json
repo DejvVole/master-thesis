@@ -3,6 +3,6 @@
   "dialect": "postgresql",
   "out": "./drizzle",
   "dbCredentials": {
-    "url": "postgres://postgres:rag_password@localhost:5432/building_rag"
+    "url": "postgres://postgres:rag_password@194.62.248.32:5432/building_rag"
   }
 }

@@ -45,8 +45,10 @@ export const auth = betterAuth({
       maxAge: 5 * 60, // 5 minút cache
     },
   },
-  trustedOrigins: (process.env.CORS_ORIGINS
-    ? process.env.CORS_ORIGINS.split(",")
-    : ["http://localhost:5173", "http://localhost:3000"]
-  ).concat(process.env.CLIENT_URL ? [process.env.CLIENT_URL] : []),
+  trustedOrigins: [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://194.62.248.32",
+    process.env.CLIENT_URL || "",
+  ].filter(Boolean),
 });
