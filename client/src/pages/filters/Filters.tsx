@@ -37,6 +37,8 @@ interface FiltersProps {
 
 type ExpandableSection =
 	| typeof FilterKeyMap.rokVystavby
+	| typeof FilterKeyMap.rokVystavbyOd
+	| typeof FilterKeyMap.rokVystavbyDo
 	| typeof FilterKeyMap.obdobie
 	| typeof FilterKeyMap.typStrechy
 	| typeof FilterKeyMap.materialFasady
@@ -45,6 +47,8 @@ type ExpandableSection =
 
 const INITIAL_EXPANDED: Record<ExpandableSection, boolean> = {
 	[FilterKeyMap.rokVystavby]: true,
+	[FilterKeyMap.rokVystavbyOd]: true,
+	[FilterKeyMap.rokVystavbyDo]: true,
 	[FilterKeyMap.obdobie]: true,
 	[FilterKeyMap.typStrechy]: true,
 	[FilterKeyMap.materialFasady]: true,
