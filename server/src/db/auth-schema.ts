@@ -55,12 +55,10 @@ export const verification = pgTable("verification", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Tabuľka pre pozvánky - len pre tracking (rola, kto pozval)
-// Token a expirácia sú v better-auth verification tabuľke
 export const invitation = pgTable("invitation", {
   id: serial("id").primaryKey(),
   email: text("email").notNull(),
-  role: text("role").notNull().default("user"), // "user" alebo "admin"
+  role: text("role").notNull().default("user"),
   invitedBy: text("invited_by")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),

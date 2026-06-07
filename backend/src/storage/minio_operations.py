@@ -11,10 +11,10 @@ import unicodedata
 logger = logging.getLogger(__name__)
 
 class MinIOOperations:
-    """Operácie pre ukladanie a načítavanie súborov z MinIO."""
+    """Operations for storing and retrieving files from MinIO."""
     
     def __init__(self):
-        """Inicializuje MinIO operácie."""
+        """Initialize MinIO operations."""
         self.minio_client = MinIOClient()
         self.client = self.minio_client.client
         self.buckets = self.minio_client.get_buckets()
@@ -22,23 +22,14 @@ class MinIOOperations:
     @staticmethod
     def _sanitize_metadata_value(value: str) -> str:
         """
-        Konvertuje hodnotu na ASCII-safe formát pre MinIO metadáta.
-        
-        Args:
-            value: Pôvodná hodnota s diaktitikou
-            
-        Returns:
-            ASCII-safe hodnota
+        Convert value to ASCII-safe format for MinIO metadata.
         """
         if not isinstance(value, str):
             value = str(value)
         
-        # Odstráň diakritiku a konvertuj na ASCII
-        # NFD = dekomponuj znaky (š -> s + ˇ), potom odstráň diakritické znaky
         nfd = unicodedata.normalize('NFD', value)
         ascii_value = ''.join(char for char in nfd if unicodedata.category(char) != 'Mn')
         
-        # Alternatíva: nahraď problematické znaky
         replacements = {
             'š': 's', 'Š': 'S',
             'č': 'c', 'Č': 'C',
@@ -66,22 +57,13 @@ class MinIOOperations:
     @staticmethod
     def _sanitize_filename(filename: str) -> str:
         """
-        Konvertuje názov súboru na safe formát (bez diakritiky, lowercase).
-        
-        Args:
-            filename: Pôvodný názov súboru
-            
-        Returns:
-            Sanitizovaný názov súboru
+        Convert filename to safe format (no diacritics, lowercase).
         """
-        # Odstráň diakritiku
         nfd = unicodedata.normalize('NFD', filename)
         ascii_name = ''.join(char for char in nfd if unicodedata.category(char) != 'Mn')
         
-        # Lowercase a nahraď medzery podčiarkovníkmi
         safe_name = ascii_name.lower().replace(' ', '_')
         
-        # Odstráň špeciálne znaky okrem _, -, .
         safe_name = ''.join(c for c in safe_name if c.isalnum() or c in ('_', '-', '.'))
         
         return safe_name
@@ -93,16 +75,7 @@ class MinIOOperations:
             evaluation_results: Optional[Dict] = None,
             metadata: Optional[Dict] = None) -> Optional[Dict[str, str]]:
         """
-        Exportuje RAG výsledky do MinIO v priečinku budovy.
-        
-        Args:
-            building_name: Názov budovy
-            complete_output: Kompletný RAG output
-            evaluation_results: Voliteľné evaluation metriky
-            metadata: Voliteľné dodatočné metadáta
-            
-        Returns:
-            Dict s object names jednotlivých exportovaných súborov
+        Export RAG results to MinIO in the building folder.
         """
         try:
             now = datetime.now()
@@ -113,7 +86,6 @@ class MinIOOperations:
             
             exported_files = {}
             
-            # 1. HLAVNÝ JSON OUTPUT
             json_object_name = f"{export_prefix}/rag_output.json"
             json_content = {
                 "building_name": building_name,
@@ -134,7 +106,6 @@ class MinIOOperations:
                 logger.info(f"RAG JSON export: {json_object_name}")
             
             
-            # 2. METADATA JSON (pre rýchly prehľad)
             metadata_object_name = f"{export_prefix}/metadata.json"
             metadata_content = {
                 "building_name": building_name,
@@ -161,7 +132,7 @@ class MinIOOperations:
             return exported_files
             
         except Exception as e:
-            logger.error(f"Chyba pri exporte RAG výsledkov: {e}")
+            logger.error(f"Error exporting RAG results: {e}")
             import traceback
             traceback.print_exc()
             return None
@@ -171,7 +142,7 @@ class MinIOOperations:
             data: Dict, 
             bucket_name: str
     ) -> bool:
-        """Helper pre upload JSON do MinIO."""
+        """Helper for uploading JSON to MinIO."""
         try:
             with tempfile.NamedTemporaryFile(mode='w', suffix='.json', encoding='utf-8', delete=False) as tmp:
                 json.dump(data, tmp, ensure_ascii=False, indent=2)
@@ -184,9 +155,9 @@ class MinIOOperations:
                 content_type='application/json'
             )
             
-            Path(tmp_path).unlink()  # Zmaž dočasný súbor
+            Path(tmp_path).unlink()
             return True
             
         except Exception as e:
-            logger.error(f"Chyba pri upload JSON: {e}")
+            logger.error(f"Error uploading JSON: {e}")
             return False

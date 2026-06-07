@@ -1,6 +1,6 @@
 /**
- * Skript pre vytvorenie prvého admin používateľa
- * Spusti: npx tsx src/scripts/create-admin.ts
+ * Script for creating the first admin user
+ * Run: npx tsx src/scripts/create-admin.ts
  */
 
 import { auth } from "../lib/auth";
@@ -23,7 +23,6 @@ const question = (prompt: string): Promise<string> => {
 async function createAdmin() {
   console.log("=== Vytvorenie Admin Používateľa ===\n");
 
-  // Kontrola či už existuje admin
   const existingAdmin = await db
     .select()
     .from(user)
@@ -55,7 +54,6 @@ async function createAdmin() {
   }
 
   try {
-    // Vytvorenie používateľa cez Better Auth API
     const result = await auth.api.signUpEmail({
       body: {
         name,
@@ -68,7 +66,6 @@ async function createAdmin() {
       throw new Error("Nepodarilo sa vytvoriť používateľa");
     }
 
-    // Aktualizácia role na admin
     await db
       .update(user)
       .set({ role: "admin" })

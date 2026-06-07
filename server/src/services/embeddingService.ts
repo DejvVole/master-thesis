@@ -1,14 +1,14 @@
-import OpenAI from 'openai';
+import OpenAI from "openai";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 if (!process.env.OPENAI_API_KEY) {
-  throw new Error('OPENAI_API_KEY is not defined in environment variables');
+  throw new Error("OPENAI_API_KEY is not defined in environment variables");
 }
 
-const EMBEDDING_MODEL = 'text-embedding-3-small';
+const EMBEDDING_MODEL = "text-embedding-3-small";
 
 export async function generateQueryEmbedding(text: string): Promise<number[]> {
   try {
@@ -19,7 +19,7 @@ export async function generateQueryEmbedding(text: string): Promise<number[]> {
 
     return response.data[0].embedding;
   } catch (error) {
-    console.error('OpenAI embedding error:', error);
-    throw new Error('Failed to generate embedding');
+    console.error("OpenAI embedding error:", error);
+    throw new Error("Failed to generate embedding");
   }
 }

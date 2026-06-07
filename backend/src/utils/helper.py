@@ -1,49 +1,43 @@
 from typing import Dict
 import argparse
+import logging
 import re
 
+logger = logging.getLogger(__name__)
+
 CATEGORY_TO_FIELD_MAPPING = {
-    # Základné informácie
     "Meno budovy": "meno_budovy",
     "Adresa": "adresa",
     "GPS súradnice": "gps_suradnice",
     "Rok výstavby": "rok_vystavby",
     "Aktuálny vlastník": "aktualny_vlastnik",
     
-    # Historické informácie
     "Rok zaradenia": "rok_zaradenia",
     "Historický význam": "historicky_vyznam",
     "Záznamy o obnove": "zaznamy_o_obnove",
     
-    # Stavebné materiály
     "Materiál vonkajšej fasády": "material_vonkajsej_fasady",
     "Typ strechy": "typ_strechy",
     "Materiál interiéru": "material_interieru",
     "Iné materiály": "ine_materialy",
     
-    # Stav budovy
     "Aktuálny stav": "aktualny_stav",
     "Kritické miesta": "kriticke_miesta",
     "Potrebné sanácie": "potrebne_sanacie",
     
-    # Dokumentácia
     "Súčasné fotografie": "sucasne_fotografie",
     "Historické fotografie": "historicke_fotografie",
     "Plány a schémy": "plany_a_schemy",
     
-    # Údržba
     "Harmonogram údržby": "harmonogram_udrzby",
     "Revízne záznamy": "revizne_zaznamy",
     
-    # Legislatíva
     "Ochranné zóny": "ochranne_zony",
     "Povolenia na zásahy": "povolenia_na_zasahy",
     "Legislatívne obmedzenia": "legislativne_obmedzenia",
     
-    # Digitálna dokumentácia
     "Digitálne výkresy": "digitalne_vykresy",
     
-    # Výskumy
     "Archeologické výskumy": "archeologicke_vyskumy",
     "Chemické analýzy": "chemicke_analyzy",
 }
@@ -51,13 +45,7 @@ CATEGORY_TO_FIELD_MAPPING = {
 
 def map_categories_to_fields(raw_output: dict) -> dict:
     """
-    Zmapuje category names na database field names.
-    
-    Args:
-        raw_output: Dict s RAG outputom (category_name: answer)
-        
-    Returns:
-        Dict s database field names (field_name: answer)
+    Map category names to database field names.
     """
     mapped_output = {}
     
@@ -67,32 +55,29 @@ def map_categories_to_fields(raw_output: dict) -> dict:
         if field_name:
             mapped_output[field_name] = answer
         else:
-            # Warning pre nezmapované kategórie
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.warning(f"Nezmapovaná kategória: '{category_name}'")
+            logger.warning(f"Unmapped category: '{category_name}'")
         
     return mapped_output
 
 
 def get_all_field_names():
-    """Vráti všetky database field names."""
+    """Return all database field names."""
     return list(set(CATEGORY_TO_FIELD_MAPPING.values()))
 
 
 def get_category_name(field_name: str) -> str:
-    """Vráti category name pre daný field name."""
+    """Return category name for a given field name."""
     for cat_name, f_name in CATEGORY_TO_FIELD_MAPPING.items():
         if f_name == field_name:
             return cat_name
     return field_name
 
 def get_category_to_field_mapping() -> Dict[str, str]:
-    """Vráti mapovanie category names na database field names."""
+    """Return the category-to-field mapping."""
     return CATEGORY_TO_FIELD_MAPPING.copy()
 
 def parse_arguments():
-    """Parsuje command line argumenty."""
+    """Parse command line arguments."""
     parser = argparse.ArgumentParser(description='RAG Pipeline for building analysis')
     parser.add_argument('file_path', type=str, help='Path to document file (PDF, DOC, DOCX)')
     parser.add_argument('original_filename', type=str, help='Original filename')
@@ -116,8 +101,7 @@ def parse_arguments():
 
 def format_building_name(value: str) -> str:
     """
-    Upraví názov budovy tak, aby začínal veľkým písmenom
-    a končil bodkou len v prípade skratky.
+    Format building name to start with uppercase and end with period only for abbreviations.
     """
     if not value or not isinstance(value, str):
         return value
@@ -137,7 +121,6 @@ def format_building_name(value: str) -> str:
         if not t:
             return False
 
-        # Skupiny iniciál (napr. "J. K.") alebo viacnásobné bodky (napr. "s.r.o.")
         if t.count('.') >= 2:
             return True
         if re.fullmatch(r'(?:[A-Za-zÁ-ž]\.){2,}', t):

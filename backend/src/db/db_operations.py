@@ -17,16 +17,7 @@ def create_processing_record(
         chroma_collection: str,
 ) -> Optional[int]:
     """
-    Vytvorí záznam o spracovaní dokumentu.
-    
-    Args:
-        source_document_id: ID source dokumentu
-        minio_object_name: MinIO object name
-        minio_bucket: MinIO bucket name
-        chroma_collection: Názov ChromaDB collection
-        
-    Returns:
-        ID záznamu alebo None
+    Create a document processing record.
     """
     conn = get_db_connection()
     cur = conn.cursor()
@@ -62,7 +53,7 @@ def create_processing_record(
         
     except Exception as e:
         conn.rollback()
-        logger.error(f"Chyba pri vytváraní processing record: {e}")
+        logger.error(f"Error creating processing record: {e}")
         import traceback
         traceback.print_exc()
         return None
@@ -78,16 +69,7 @@ def save_source_document(
     file_hash: Optional[str] = None
 ) -> int:
     """
-    Uloží informácie o zdrojovom PDF dokumente.
-    
-    Args:
-        file_name: Originálny názov súboru
-        minio_object_name: Názov objektu v MinIO storage
-        metadata: Voliteľné metadáta
-        file_hash: SHA-256 hash obsahu súboru pre detekciu duplikátov
-    
-    Returns:
-        ID uloženého dokumentu
+    Save source PDF document information.
     """
     conn = get_db_connection()
     cur = conn.cursor()
@@ -95,8 +77,6 @@ def save_source_document(
     normalized_minio_object_name = normalize_possible_mojibake(minio_object_name)
     
     try:
-        # Ak máme file_hash, použijeme ON CONFLICT
-        # Ak nemáme, vložíme bez ON CONFLICT
         if file_hash:
             insert_query = """
                 INSERT INTO source_documents (file_name, file_hash, file_path, metadata, processed_date)
@@ -109,7 +89,6 @@ def save_source_document(
                 RETURNING id;
             """
         else:
-            # Fallback pre prípad bez hashu (spätná kompatibilita)
             insert_query = """
                 INSERT INTO source_documents (file_name, file_hash, file_path, metadata, processed_date)
                 VALUES (%s, %s, %s, %s, %s)
@@ -128,12 +107,12 @@ def save_source_document(
         
         doc_id = cur.fetchone()[0]
         conn.commit()
-        logger.info(f"PDF dokument uložený s ID: {doc_id}, MinIO object: {minio_object_name}, hash: {file_hash[:16] if file_hash else 'N/A'}...")
+        logger.info(f"Source document saved with ID: {doc_id}, MinIO object: {minio_object_name}, hash: {file_hash[:16] if file_hash else 'N/A'}...")
         return doc_id
         
     except Exception as e:
         conn.rollback()
-        logger.error(f"Chyba pri ukladaní source dokumentu: {e}")
+        logger.error(f"Error saving source document: {e}")
         raise
     finally:
         cur.close()
@@ -145,20 +124,12 @@ def save_building_to_db(
     source_document_id: Optional[int] = None
 ) -> int:
     """
-    Uloží RAG output do databázy.
-    
-    Args:
-        output_data: Slovník s dátami z RAG outputu
-        source_document_id: ID zdrojového dokumentu
-        
-    Returns:
-        ID vloženého záznamu
+    Save RAG output to database.
     """
     conn = get_db_connection()
     cur = conn.cursor()
     
     try:
-        # Konverzia záznamov o obnove na text
         zaznamy_o_obnove = None
         if output_data.get("zaznamy_o_obnove"):
             if isinstance(output_data["zaznamy_o_obnove"], list):
@@ -227,12 +198,12 @@ def save_building_to_db(
         budova_id = cur.fetchone()[0]
         
         conn.commit()
-        logger.info(f"Budova uložená do databázy s ID: {budova_id}")
+        logger.info(f"Building saved to database with ID: {budova_id}")
         return budova_id
         
     except Exception as e:
         conn.rollback()
-        logger.error(f"Chyba pri ukladaní do databázy: {e}")
+        logger.error(f"Error saving to database: {e}")
         raise
     finally:
         cur.close()
@@ -240,21 +211,12 @@ def save_building_to_db(
 
 def save_category_embeddings(budova_id: int, output_data: Dict[str, Any], embed_model) -> bool:
     """
-    Vytvorí embeddingy pre všetky kategórie a uloží ich do buildings_info_embed.
-    
-    Args:
-        budova_id: ID budovy
-        output_data: Dict s RAG outputom (field_name: answer)
-        embed_model: Embedding model
-        
-    Returns:
-        True ak úspešné, False inak
+    Create embeddings for all categories and save to buildings_info_embed.
     """
     conn = get_db_connection()
     cur = conn.cursor()
     
     try:
-        # Mapping field_name -> embedding_column_name
         FIELD_TO_EMB_COLUMN = {
             'meno_budovy': 'meno_budovy_emb',
             'adresa': 'adresa_emb',
@@ -290,7 +252,6 @@ def save_category_embeddings(budova_id: int, output_data: Dict[str, Any], embed_
         for field_name, emb_column in FIELD_TO_EMB_COLUMN.items():
             value = output_data.get(field_name)
             
-            # Skip prázdne hodnoty a "NIE JE"
             if not value or str(value).strip().upper() in CONFIG['missing_value_indicators']:
                 embeddings_data[emb_column] = None
                 continue
@@ -300,7 +261,6 @@ def save_category_embeddings(budova_id: int, output_data: Dict[str, Any], embed_
             embeddings_data[emb_column] = embedding
             embed_count += 1
         
-        # Vytvor INSERT query dynamicky
         columns = list(embeddings_data.keys())
         placeholders = ', '.join(['%s'] * len(columns))
         columns_str = ', '.join(columns)
@@ -332,14 +292,7 @@ def save_category_embeddings(budova_id: int, output_data: Dict[str, Any], embed_
     
 def save_source_metadata(budova_id: int, source_metadata: Dict[str, Dict]) -> bool:
     """
-    Uloží metadata o zdroji informácií pre každú kategóriu.
-    
-    Args:
-        budova_id: ID budovy
-        source_metadata: Dict s metadata pre každé pole
-        
-    Returns:
-        True ak úspešné, False inak
+    Save source metadata for each category field.
     """
     conn = get_db_connection()
     cur = conn.cursor()
@@ -379,14 +332,7 @@ def save_normalized_values_to_db(
     normalized_results: Dict[str, Dict[str, Any]],
 ) -> int:
     """
-    Uloží normalizované hodnoty do M:N tabuľky.
-    
-    Args:
-        building_id: ID budovy
-        normalized_results: Výsledky z normalizácie
-        
-    Returns:
-        Počet uložených hodnôt
+    Save normalized values to M:N table.
     """
     conn = get_db_connection()
     cur = conn.cursor()

@@ -118,11 +118,9 @@ router.post("/", upload.single("pdf"), async (req, res) => {
   try {
     console.log(`🔍 Computing file hash for '${originalName}'...`);
 
-    // Vypočítame SHA-256 hash súboru pre kontrolu duplikátov
     const fileHash = await calculateFileHash(uploadedFile.path);
     console.log(`   Hash: ${fileHash}`);
 
-    // Kontrola či súbor s rovnakým obsahom už existuje
     const existingByHash = await db
       .select()
       .from(sourceDocuments)
@@ -198,7 +196,7 @@ router.post("/", upload.single("pdf"), async (req, res) => {
             totalCategories: progressData.total_categories,
           });
         },
-        fileHash, // Predávame hash do Python pipeline
+        fileHash, // Pass hash to Python pipeline
       );
 
       // Store cancel so the DELETE endpoint can kill the process

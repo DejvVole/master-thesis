@@ -67,7 +67,6 @@ export function runRagPipelineWithProgress(
       enableInference ? "--enable-inference" : "--no-inference",
     ];
 
-    // Pridáme file hash ak je dostupný
     if (fileHash) {
       pythonArgs.push("--file-hash", fileHash);
     }

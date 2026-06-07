@@ -65,7 +65,6 @@ export default function Filters({
 	handleSearch,
 	handleReset,
 }: FiltersProps) {
-	// Filter options (normalizované hodnoty z DB)
 	const [filterOptions, setFilterOptions] = useState<FilterOptions>({
 		typyStrechy: [],
 		materialyFasady: [],

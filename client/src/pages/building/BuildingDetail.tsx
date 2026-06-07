@@ -15,18 +15,15 @@ const buildingFields: {
 	label: string;
 	category: string;
 }[] = [
-	// Základné informácie
 	{ key: 'adresa', label: 'Adresa', category: 'základné' },
 	{ key: 'gpsSuradnice', label: 'GPS súradnice', category: 'základné' },
 	{ key: 'rokVystavby', label: 'Rok výstavby', category: 'základné' },
 	{ key: 'aktualnyVlastnik', label: 'Aktuálny vlastník', category: 'základné' },
 	{ key: 'rokZaradenia', label: 'Rok zaradenia', category: 'základné' },
 
-	// História a význam
 	{ key: 'historickyVyznam', label: 'Historický význam', category: 'história' },
 	{ key: 'zaznamyOObnove', label: 'Záznamy o obnove', category: 'história' },
 
-	// Materiály a konštrukcia
 	{
 		key: 'materialVonkajsejFasady',
 		label: 'Materiál vonkajšej fasády',
@@ -44,12 +41,10 @@ const buildingFields: {
 	{ key: 'aktualnyStav', label: 'Aktuálny stav', category: 'stav' },
 	{ key: 'kritickeMiesta', label: 'Kritické miesta', category: 'stav' },
 
-	// Údržba a sanácie
 	{ key: 'potrebneSanacie', label: 'Potrebné sanácie', category: 'údržba' },
 	{ key: 'harmonogramUdrzby', label: 'Harmonogram údržby', category: 'údržba' },
 	{ key: 'revizneZaznamy', label: 'Revízne záznamy', category: 'údržba' },
 
-	// Dokumentácia
 	{
 		key: 'sucasneFotografie',
 		label: 'Súčasné fotografie',
@@ -62,7 +57,6 @@ const buildingFields: {
 	},
 	{ key: 'planyASchemy', label: 'Plány a schémy', category: 'dokumentácia' },
 
-	// Legislatíva
 	{ key: 'ochranneZony', label: 'Ochranné zóny', category: 'legislatíva' },
 	{
 		key: 'povoleniaNaZasahy',
@@ -75,14 +69,12 @@ const buildingFields: {
 		category: 'legislatíva',
 	},
 
-	// Digitálne dáta
 	{
 		key: 'digitalneVykresy',
 		label: 'Digitálne výkresy',
 		category: 'digitálne',
 	},
 
-	// Výskum a analýzy
 	{
 		key: 'archeologickeVyskumy',
 		label: 'Archeologické výskumy',
@@ -91,7 +83,6 @@ const buildingFields: {
 	{ key: 'chemickeAnalyzy', label: 'Chemické analýzy', category: 'výskum' },
 ];
 
-// `menoBudovy` nie je v `buildingFields` (zobrazuje sa ako nadpis), pridáva sa zvlášť.
 const fieldLabels: Record<string, string> = {
 	menoBudovy: 'Meno budovy',
 	...Object.fromEntries(buildingFields.map((f) => [f.key, f.label])),

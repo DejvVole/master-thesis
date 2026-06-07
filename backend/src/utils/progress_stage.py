@@ -25,15 +25,7 @@ def report_progress(
     total_categories: Optional[int] = None
 ):
     """
-    Reportuje progress do stdout v JSON formáte pre SSE streaming.
-    
-    Args:
-        stage: Aktuálna fáza spracovania
-        progress: Percentuálny progress (0-100)
-        message: Hlavná správa
-        detail: Detailná informácia
-        current_category: Aktuálna kategória (pre RAG extraction)
-        total_categories: Celkový počet kategórií
+    Report progress to stdout in JSON format for SSE streaming.
     """
     progress_data = {
         "type": "progress",
@@ -49,6 +41,5 @@ def report_progress(
         progress_data["current_category"] = current_category
         progress_data["total_categories"] = total_categories
     
-    # Špeciálny prefix pre identifikáciu progress správ
     print(f"PROGRESS:{json.dumps(progress_data)}", flush=True)
     sys.stdout.flush()

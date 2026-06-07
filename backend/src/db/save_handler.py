@@ -26,7 +26,7 @@ def save_rag_output_to_database(
     missing_count: int = 0,
     file_hash: Optional[str] = None
 ) -> Optional[int]:
-    """Uloží RAG output do databázy (PDF je už v MinIO)."""
+    """Save RAG output to database (PDF is already in MinIO)."""
     try:
         print("\n" + "=" * 70)
         print("SAVING TO DATABASE")
@@ -48,7 +48,6 @@ def save_rag_output_to_database(
             print(f"\n✓ PDF already in MinIO: {minio_object_name}")
             if file_hash:
                 print(f"   File hash: {file_hash[:16]}...")
-            
             # 1. Source document
             doc_id = save_source_document(
                 file_name=target_pdf,
@@ -81,7 +80,7 @@ def save_rag_output_to_database(
             source_document_id=doc_id
         )
 
-        # 4. Normalizované hodnoty (M:N tabuľka)
+        # 4. Normalized values (M:N table)
         normalized_count = save_normalized_values_to_db(
             building_id=budova_id,
             normalized_results=normalized_results
@@ -128,7 +127,7 @@ def save_rag_output_to_database(
 
         minio_ops = MinIOOperations()
         
-        # 7. Export do MinIO
+        # 7. Export to MinIO
         exported_files = minio_ops.export_rag_results(
             building_name=building_name,
             complete_output=complete_output,

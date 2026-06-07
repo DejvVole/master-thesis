@@ -32,7 +32,6 @@ export function AcceptInvitePage() {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [success, setSuccess] = useState(false);
 
-	// Overenie tokenu pri načítaní
 	useEffect(() => {
 		const verifyToken = async () => {
 			if (!token) {
@@ -107,7 +106,6 @@ export function AcceptInvitePage() {
 		return <LoadingSpinner text="Overujem pozvánku..." />;
 	}
 
-	// Error state - neplatný token;
 	if (!isValid && !success) {
 		return (
 			<Flex

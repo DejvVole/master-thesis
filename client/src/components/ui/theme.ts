@@ -6,7 +6,6 @@ import {
 	defineSlotRecipe,
 } from '@chakra-ui/react';
 
-// 1) Button recipe (globálne varianty + default variant)
 const buttonRecipe = defineRecipe({
 	base: {
 		fontWeight: '600',
@@ -41,7 +40,6 @@ const buttonRecipe = defineRecipe({
 	},
 });
 
-// 2) Input slot recipe (Input má sloty, štýluje sa napr. "field")
 const inputRecipe = defineSlotRecipe({
 	slots: ['root', 'field', 'element'],
 	variants: {
@@ -67,7 +65,6 @@ const inputRecipe = defineSlotRecipe({
 	},
 });
 
-// 3) Celý config: tokens + semantic tokens + recipes
 const config = defineConfig({
 	globalCss: {
 		'html, body': {
@@ -149,7 +146,6 @@ const config = defineConfig({
 		},
 		slotRecipes: {
 			input: inputRecipe,
-			// select / textarea vieš pridať podobne (slotRecipe)
 		},
 	},
 });

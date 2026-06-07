@@ -8,21 +8,18 @@ from utils.config_loader import CONFIG
 logger = logging.getLogger(__name__)
 
 class MinIOClient:
-    """Client pre prácu s MinIO object storage."""
+    """Client for MinIO object storage."""
     
     def __init__(self):
         """
-        Inicializuje MinIO klienta.
-        
-        Args:
-            config_path: Cesta ku konfiguračnému súboru
+        Initialize MinIO client.
         """
         self.config = CONFIG["minio"]
         self.client = self._create_client()
         self._ensure_buckets_exist()
     
     def _create_client(self) -> Minio:
-        """Vytvorí MinIO klienta."""
+        """Create MinIO client."""
 
         endpoint = os.getenv("MINIO_ENDPOINT", "localhost")
         port = os.getenv("MINIO_PORT", "9000")
@@ -40,27 +37,27 @@ class MinIOClient:
                 secret_key=secret_key,
                 secure=secure.lower() == "true"
             )
-            logger.info(f"MinIO klient pripojený na {endpoint}:{port}")
+            logger.info(f"MinIO client connected to {endpoint}:{port}")
             return client
         except Exception as e:
-            logger.error(f"Chyba pri vytváraní MinIO klienta: {e}")
+            logger.error(f"Error creating MinIO client: {e}")
             raise
     
     def _ensure_buckets_exist(self):
-        """Vytvorí buckety ak neexistujú."""
+        """Create buckets if they don't exist."""
         for bucket_name in self.config['buckets'].values():
             try:
                 if not self.client.bucket_exists(bucket_name):
                     self.client.make_bucket(bucket_name)
-                    logger.info(f"Bucket '{bucket_name}' vytvorený")
+                    logger.info(f"Bucket '{bucket_name}' created")
                 else:
-                    logger.debug(f"Bucket '{bucket_name}' už existuje")
+                    logger.debug(f"Bucket '{bucket_name}' already exists")
             except S3Error as e:
-                logger.error(f"Chyba pri vytváraní bucketu '{bucket_name}': {e}")
+                logger.error(f"Error creating bucket '{bucket_name}': {e}")
                 raise
     
     def health_check(self) -> bool:
-        """Skontroluje pripojenie k MinIO."""
+        """Check MinIO connection."""
         try:
             self.client.list_buckets()
             logger.info("MinIO health check: OK")
@@ -70,5 +67,5 @@ class MinIOClient:
             return False
     
     def get_buckets(self) -> dict:
-        """Vráti slovník s názvami bucketov."""
+        """Return bucket names dictionary."""
         return self.config['buckets']

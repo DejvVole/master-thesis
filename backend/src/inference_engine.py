@@ -24,7 +24,7 @@ missing_value_key = CONFIG['missing_value_indicators']
 
 @dataclass
 class CategoryResult:
-    """Výsledok pre jednu kategóriu."""
+    """Result for a single category."""
     category_name: str
     value: Optional[str]
     source_type: SourceType
@@ -83,7 +83,7 @@ def create_inference_prompt() -> RichPromptTemplate:
 
 
 def parse_inference_response(response_text: str) -> tuple[Optional[str], Optional[ConfidenceLevel], Optional[str]]:
-    """Parsuje odpoveď z inference LLM."""
+    """Parse inference LLM response."""
     value = None
     confidence = None
     reasoning = None
@@ -93,7 +93,6 @@ def parse_inference_response(response_text: str) -> tuple[Optional[str], Optiona
         line = line.strip()
         if line.startswith("ODPOVEĎ:"):
             raw_value = line.replace("ODPOVEĎ:", "").strip()
-            # Ignoruj ak je hodnota "NEVIEM ODHADNÚŤ" alebo ak LLM omylom vložilo confidence level
             if raw_value.upper() not in ["NEVIEM ODHADNÚŤ","LOW", "MEDIUM", "HIGH", ""]:
                 value = raw_value
         elif line.startswith("DÔVERYHODNOSŤ:"):
@@ -103,19 +102,18 @@ def parse_inference_response(response_text: str) -> tuple[Optional[str], Optiona
         elif line.startswith("ZDÔVODNENIE:"):
             reasoning = line.replace("ZDÔVODNENIE:", "").strip()
     
-    # Ak je value rovnaké ako confidence (LLM sa pomýlilo), vynuluj value
+    # If value equals confidence (LLM error), nullify value
     if value and value.upper() in ["LOW", "MEDIUM", "HIGH"]:
-        logger.warning(f"LLM vložilo confidence level do ODPOVEĎ: {value}, ignorujem")
+        logger.warning(f"LLM placed confidence level in ODPOVEĎ: {value}, ignoring")
         value = None
     
     return value, confidence, reasoning
 
 
 def build_known_info_context(extracted_results: Dict[str, str]) -> str:
-    """Zostaví kontext zo všetkých známych informácií o budove."""
+    """Build context from all known information about the building."""
     known_parts = []
     
-    # Preklad field names na čitateľné názvy
     field_translations = {
         "meno_budovy": "Meno budovy",
         "adresa": "Adresa",
@@ -145,7 +143,6 @@ def build_known_info_context(extracted_results: Dict[str, str]) -> str:
         "chemicke_analyzy": "Chemické analýzy"
     }
     
-    # Prejdi všetky extrahované výsledky a pridaj tie, ktoré majú hodnotu
     for field, value in extracted_results.items():
         if value and value not in missing_value_key:
             readable_name = field_translations.get(field, field.replace("_", " ").title())
@@ -164,17 +161,8 @@ def infer_missing_categories(
     field_mapping: Dict[str, str]
 ) -> Dict[str, CategoryResult]:
     """
-    Pokúsi sa odhadnúť hodnoty pre kategórie, ktoré neboli nájdené v dokumente.
-    Inference sa robí IBA pre špecifické kategórie.
-    
-    Args:
-        llm: LLM model pre inference
-        extracted_results: Výsledky z RAG pipeline (field_name: value)
-        categories: Zoznam kategórií s popismi
-        field_mapping: Mapovanie category_name -> field_name
-        
-    Returns:
-        Dict s CategoryResult pre každú kategóriu
+    Attempt to infer values for categories not found in the document.
+    Inference is only performed for specific whitelisted categories.
     """
     
     INFERENCE_ALLOWED_FIELDS = {
@@ -194,14 +182,12 @@ def infer_missing_categories(
         field_name = field_mapping.get(category_name)
         
         if not field_name:
-            logger.warning(f"Nenájdené mapovanie pre kategóriu: {category_name}")
+            logger.warning(f"No mapping found for category: {category_name}")
             continue
         
         current_value = extracted_results.get(field_name)
         
-        # Kontrola či bola hodnota extrahovaná
         if current_value and current_value.upper() not in missing_value_key:
-            # Hodnota bola nájdená v dokumente
             results[field_name] = CategoryResult(
                 category_name=category_name,
                 value=current_value,
@@ -210,7 +196,6 @@ def infer_missing_categories(
                 reasoning="Extrahované priamo z dokumentu"
             )
         else:
-            # Kontrola či je táto kategória v whitelist pre inference
             if field_name not in INFERENCE_ALLOWED_FIELDS:
                 results[field_name] = CategoryResult(
                     category_name=category_name,
@@ -222,7 +207,6 @@ def infer_missing_categories(
                 logger.debug(f"Skipping inference for {category_name} (not in whitelist)")
                 continue
             
-            # Pokus o inference (iba pre whitelisted kategórie)
             logger.debug(f"Inferring value for: {category_name}")
             
             try:
@@ -272,10 +256,7 @@ def merge_results(
     inference_results: Dict[str, CategoryResult]
 ) -> Dict[str, Dict[str, Any]]:
     """
-    Zlúči výsledky z extrakcie a inference do finálnej štruktúry.
-    
-    Returns:
-        Dict s kompletnými informáciami pre každú kategóriu
+    Merge extraction and inference results into final structure.
     """
     merged = {}
     

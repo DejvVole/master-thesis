@@ -1,4 +1,6 @@
+import json
 import logging
+import re
 from typing import Dict, List, Optional, Any
 from llama_index.core.llms import LLM
 
@@ -8,7 +10,6 @@ from db.db_operations import get_db_connection
 logger = logging.getLogger(__name__)
 
 
-# Mapovanie field_name -> category v DB
 FIELD_TO_CATEGORY_MAP = {
     "typ_strechy": "typ_strechy",
     "material_vonkajsej_fasady": "material_fasady",
@@ -22,13 +23,7 @@ MULTISELECT_CATEGORIES = {"material_fasady", "material_interieru", "typ_strechy"
 
 def get_available_normalized_options(category: str) -> List[str]:
     """
-    Získa zoznam dostupných normalizovaných hodnôt z DB pre danú kategóriu.
-    
-    Args:
-        category: Názov kategórie (napr. 'typ_strechy')
-        
-    Returns:
-        List hodnôt (napr. ['SEDLOVÁ', 'VALBOVÁ', ...])
+    Get available normalized values from DB for a given category.
     """
     conn = get_db_connection()
     cur = conn.cursor()
@@ -56,26 +51,15 @@ def normalize_single_value(
     category: str
 ) -> Dict[str, Any]:
     """
-    Normalizuje jednu hodnotu pomocou LLM.
-    
-    Args:
-        llm: LLM instance
-        field_name: Názov fieldu (napr. 'typ_strechy')
-        raw_value: Surová hodnota z RAG/INFERENCE
-        category: Kategória v DB (napr. 'typ_strechy')
-        
-    Returns:
-        Dict s normalizovanými hodnotami a metadátami
+    Normalize a single value using LLM.
     """
     
-    # Získaj dostupné možnosti z DB
     available_options = get_available_normalized_options(category)
     
     if not available_options:
         logger.warning(f"No normalized options found for category: {category}")
         return {"normalized_values": []}
     
-    # LLM prompt pre normalizáciu
     is_multiselect = category in MULTISELECT_CATEGORIES
     
     prompt = f"""
@@ -105,11 +89,7 @@ def normalize_single_value(
     try:
         response = llm.complete(prompt)
         response_text = str(response).strip()
-        
-        import json
-        import re
-        
-        # Nájdi JSON v odpovedi
+
         json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
         if json_match:
             result = json.loads(json_match.group())
@@ -120,7 +100,7 @@ def normalize_single_value(
         if isinstance(normalized_values, str):
             normalized_values = [normalized_values]
         
-        # Filter len hodnoty ktoré existujú v možnostiach
+        # Filter only values that exist in options
         valid_values = [v for v in normalized_values if v in available_options]
         
         if not valid_values:
@@ -141,17 +121,7 @@ def normalize_all_values(
     complete_output: Dict[str, str]
 ) -> Dict[str, Dict[str, Any]]:
     """
-    Normalizuje všetky hodnoty po RAG + INFERENCE kroku.
-    
-    Args:
-        llm: LLM instance
-        complete_output: Zlúčené výsledky z RAG + INFERENCE
-        
-    Returns:
-        Dict[field_name] -> {
-            "normalized_values": [...],
-            "option_ids": [...],  # DB IDs
-        }
+    Normalize all values after the RAG + INFERENCE step.
     """
     
     normalized_results = {}
@@ -205,15 +175,7 @@ def normalize_all_values(
 
 def get_normalized_option_ids(category: str, values: List[str]) -> List[int]:
     """
-    Získa DB IDs pre normalizované hodnoty. 
-    Ak hodnota neexistuje, vytvorí ju.
-    
-    Args:
-        category: Kategória (napr. 'typ_strechy')
-        values: List hodnôt (napr. ['SEDLOVÁ', 'VALBOVÁ'])
-        
-    Returns:
-        List DB IDs
+    Get DB IDs for normalized values. Creates new entries if they don't exist.
     """
     conn = get_db_connection()
     cur = conn.cursor()
@@ -222,7 +184,6 @@ def get_normalized_option_ids(category: str, values: List[str]) -> List[int]:
     
     try:
         for value in values:
-            # Skús nájsť existujúcu hodnotu
             cur.execute("""
                 SELECT id FROM normalized_value_options
                 WHERE category = %s AND value = %s
@@ -233,7 +194,6 @@ def get_normalized_option_ids(category: str, values: List[str]) -> List[int]:
             if row:
                 ids.append(row[0])
             else:
-                # Vytvor novú hodnotu (LLM generoval niečo nové)
                 logger.info(f"Creating new normalized value: {category} = {value}")
                 
                 cur.execute("""
@@ -259,20 +219,16 @@ def get_normalized_option_ids(category: str, values: List[str]) -> List[int]:
 
 
 def extract_year_from_text(text: str) -> Optional[int]:
-    """Extrahuje rok z textu."""
-    import re
-    
+    """Extract year from text."""
     if not text or text.upper() in CONFIG['missing_value_indicators']:
         return None
     
-    # Rozpätie rokov (napr. "1350-1400") -> vráť stred (kontroluj PRED single year)
     range_match = re.search(r'(\d{4})\s*-\s*(\d{4})', text)
     if range_match:
         start = int(range_match.group(1))
         end = int(range_match.group(2))
         return (start + end) // 2
 
-    # Hľadaj štvormiestne číslo
     year_match = re.search(r'\b(1\d{3}|20\d{2})\b', text)
     if year_match:
         return int(year_match.group(1))
@@ -282,16 +238,9 @@ def extract_year_from_text(text: str) -> Optional[int]:
 
 def get_obdobie_from_year(year: int) -> Optional[int]:
     """
-    Určí DB ID obdobia z roku.
-    
-    Args:
-        year: Rok výstavby
-        
-    Returns:
-        DB ID obdobia alebo None
+    Determine the DB ID of the epoch from the year.
     """
     
-    # Mapovanie rokov -> hodnota obdobia
     epoch_mapping = {
         "STAROVEK": (0, 476),
         "STREDOVEK": (477, 1492),
@@ -303,7 +252,6 @@ def get_obdobie_from_year(year: int) -> Optional[int]:
     
     for epoch_value, (start, end) in epoch_mapping.items():
         if start <= year <= end:
-            # Získaj DB ID
             conn = get_db_connection()
             cur = conn.cursor()
             

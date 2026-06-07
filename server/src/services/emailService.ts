@@ -1,6 +1,5 @@
 import nodemailer from "nodemailer";
 
-// Konfigurácia transportu - použiť environment variables
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.gmail.com",
   port: parseInt(process.env.SMTP_PORT || "587"),
@@ -18,7 +17,6 @@ export async function sendInvitationEmail(
   const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER;
   const appName = process.env.APP_NAME;
 
-  // Skontroluj či sú nastavené SMTP credentials
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     throw new Error(
       "SMTP credentials nie sú nastavené. Nastavte SMTP_USER a SMTP_PASS environment variables.",

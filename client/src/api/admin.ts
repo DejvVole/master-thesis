@@ -133,7 +133,6 @@ export const adminApi = {
 	},
 };
 
-// Verejné API pre pozvánky (bez auth)
 export const invitationApi = {
 	verify: async (
 		token: string

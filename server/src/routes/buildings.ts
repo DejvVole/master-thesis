@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db } from "../db";
+import { db, pool } from "../db";
 import {
   buildings_info,
   buildingsInfoSources,
@@ -9,7 +9,6 @@ import {
 } from "../db/schema";
 import { eq, desc, and, gte, lte, inArray } from "drizzle-orm";
 import { getMinioPresignedUrl } from "../services/minioService";
-import { searchBuildings } from "../services/searchService";
 import {
   validate,
   filterQuerySchema,
@@ -19,32 +18,6 @@ import {
 } from "../middleware/validation";
 
 const router = Router();
-
-const FILTER_OPTION_CATEGORIES = [
-  { dbCategory: "typ_strechy", responseKey: "typyStrechy" },
-  { dbCategory: "material_fasady", responseKey: "materialyFasady" },
-  { dbCategory: "material_interieru", responseKey: "materialyInterieru" },
-  { dbCategory: "aktualny_stav", responseKey: "stavy" },
-  { dbCategory: "obdobie", responseKey: "obdobia" },
-] as const;
-
-async function fetchFilterOptions(dbCategory: string) {
-  const rows = await db
-    .select({
-      value: normalizedValueOptions.value,
-      label: normalizedValueOptions.displayLabel,
-    })
-    .from(normalizedValueOptions)
-    .where(
-      and(
-        eq(normalizedValueOptions.category, dbCategory),
-        eq(normalizedValueOptions.isActive, true),
-      ),
-    )
-    .orderBy(normalizedValueOptions.sortOrder, normalizedValueOptions.value);
-
-  return rows.map((r) => ({ value: r.value, label: r.label || r.value }));
-}
 
 router.get("/", async (req, res) => {
   try {
@@ -62,15 +35,103 @@ router.get("/", async (req, res) => {
 
 router.get("/filter-options", async (req, res) => {
   try {
-    const results = await Promise.all(
-      FILTER_OPTION_CATEGORIES.map((c) => fetchFilterOptions(c.dbCategory)),
-    );
+    const typyStrechy = await db
+      .select({
+        value: normalizedValueOptions.value,
+        label: normalizedValueOptions.displayLabel,
+        sortOrder: normalizedValueOptions.sortOrder,
+      })
+      .from(normalizedValueOptions)
+      .where(
+        and(
+          eq(normalizedValueOptions.category, "typ_strechy"),
+          eq(normalizedValueOptions.isActive, true),
+        ),
+      )
+      .orderBy(normalizedValueOptions.sortOrder, normalizedValueOptions.value);
 
-    const response = Object.fromEntries(
-      FILTER_OPTION_CATEGORIES.map((c, i) => [c.responseKey, results[i]]),
-    );
+    const materialyFasady = await db
+      .select({
+        value: normalizedValueOptions.value,
+        label: normalizedValueOptions.displayLabel,
+        sortOrder: normalizedValueOptions.sortOrder,
+      })
+      .from(normalizedValueOptions)
+      .where(
+        and(
+          eq(normalizedValueOptions.category, "material_fasady"),
+          eq(normalizedValueOptions.isActive, true),
+        ),
+      )
+      .orderBy(normalizedValueOptions.sortOrder, normalizedValueOptions.value);
 
-    res.json(response);
+    const materialyInterieru = await db
+      .select({
+        value: normalizedValueOptions.value,
+        label: normalizedValueOptions.displayLabel,
+        sortOrder: normalizedValueOptions.sortOrder,
+      })
+      .from(normalizedValueOptions)
+      .where(
+        and(
+          eq(normalizedValueOptions.category, "material_interieru"),
+          eq(normalizedValueOptions.isActive, true),
+        ),
+      )
+      .orderBy(normalizedValueOptions.sortOrder, normalizedValueOptions.value);
+
+    const stavy = await db
+      .select({
+        value: normalizedValueOptions.value,
+        label: normalizedValueOptions.displayLabel,
+        sortOrder: normalizedValueOptions.sortOrder,
+      })
+      .from(normalizedValueOptions)
+      .where(
+        and(
+          eq(normalizedValueOptions.category, "aktualny_stav"),
+          eq(normalizedValueOptions.isActive, true),
+        ),
+      )
+      .orderBy(normalizedValueOptions.sortOrder, normalizedValueOptions.value);
+
+    const obdobia = await db
+      .select({
+        value: normalizedValueOptions.value,
+        label: normalizedValueOptions.displayLabel,
+        sortOrder: normalizedValueOptions.sortOrder,
+      })
+      .from(normalizedValueOptions)
+      .where(
+        and(
+          eq(normalizedValueOptions.category, "obdobie"),
+          eq(normalizedValueOptions.isActive, true),
+        ),
+      )
+      .orderBy(normalizedValueOptions.sortOrder, normalizedValueOptions.value);
+
+    res.json({
+      typyStrechy: typyStrechy.map((r) => ({
+        value: r.value,
+        label: r.label || r.value,
+      })),
+      materialyFasady: materialyFasady.map((r) => ({
+        value: r.value,
+        label: r.label || r.value,
+      })),
+      materialyInterieru: materialyInterieru.map((r) => ({
+        value: r.value,
+        label: r.label || r.value,
+      })),
+      stavy: stavy.map((r) => ({
+        value: r.value,
+        label: r.label || r.value,
+      })),
+      obdobia: obdobia.map((r) => ({
+        value: r.value,
+        label: r.label || r.value,
+      })),
+    });
   } catch (error) {
     console.error("Error fetching filter options:", error);
     res.status(500).json({ error: "Failed to fetch filter options" });
@@ -198,8 +259,108 @@ router.get(
 router.post("/search", validate(searchBodySchema, "body"), async (req, res) => {
   try {
     const { query } = req.validatedData as { query: string };
-    const results = await searchBuildings(query);
-    res.json(results);
+
+    const { generateQueryEmbedding } =
+      await import("../services/embeddingService");
+    const queryEmbedding = await generateQueryEmbedding(query);
+    const embeddingStr = `[${queryEmbedding.join(",")}]`;
+    const wordPattern = `\\m${query}`;
+
+    const { rows: results } = await pool.query(
+      `
+      WITH category_scores AS (
+        SELECT 
+          be.budova_id,
+          LEAST(
+            COALESCE(be.meno_budovy_emb <=> $1::vector, 1),
+            COALESCE(be.adresa_emb <=> $1::vector, 1),
+            COALESCE(be.rok_vystavby_emb <=> $1::vector, 1),
+            COALESCE(be.aktualny_vlastnik_emb <=> $1::vector, 1),
+            COALESCE(be.rok_zaradenia_emb <=> $1::vector, 1),
+            COALESCE(be.historicky_vyznam_emb <=> $1::vector, 1),
+            COALESCE(be.zaznamy_o_obnove_emb <=> $1::vector, 1),
+            COALESCE(be.material_vonkajsej_fasady_emb <=> $1::vector, 1),
+            COALESCE(be.typ_strechy_emb <=> $1::vector, 1),
+            COALESCE(be.material_interieru_emb <=> $1::vector, 1),
+            COALESCE(be.ine_materialy_emb <=> $1::vector, 1),
+            COALESCE(be.aktualny_stav_emb <=> $1::vector, 1),
+            COALESCE(be.kriticke_miesta_emb <=> $1::vector, 1),
+            COALESCE(be.potrebne_sanacie_emb <=> $1::vector, 1),
+            COALESCE(be.sucasne_fotografie_emb <=> $1::vector, 1),
+            COALESCE(be.historicke_fotografie_emb <=> $1::vector, 1),
+            COALESCE(be.plany_a_schemy_emb <=> $1::vector, 1),
+            COALESCE(be.harmonogram_udrzby_emb <=> $1::vector, 1),
+            COALESCE(be.revizne_zaznamy_emb <=> $1::vector, 1),
+            COALESCE(be.ochranne_zony_emb <=> $1::vector, 1),
+            COALESCE(be.povolenia_na_zasahy_emb <=> $1::vector, 1),
+            COALESCE(be.legislativne_obmedzenia_emb <=> $1::vector, 1),
+            COALESCE(be.digitalne_vykresy_emb <=> $1::vector, 1),
+            COALESCE(be.archeologicke_vyskumy_emb <=> $1::vector, 1),
+            COALESCE(be.chemicke_analyzy_emb <=> $1::vector, 1)
+          ) as min_distance
+        FROM buildings_info_embed be
+      ),
+      text_matches AS (
+        SELECT id as budova_id
+        FROM buildings_info
+        WHERE is_hidden = false
+          AND (
+            meno_budovy ~* $2
+            OR adresa ~* $2
+          )
+      )
+      SELECT 
+        bi.*,
+        COALESCE(cs.min_distance, 0.99) as similarity_score
+      FROM buildings_info bi
+      LEFT JOIN category_scores cs ON bi.id = cs.budova_id
+      LEFT JOIN text_matches tm ON bi.id = tm.budova_id
+      WHERE bi.is_hidden = false
+        AND (cs.min_distance < 0.5 OR tm.budova_id IS NOT NULL)
+      ORDER BY 
+        CASE WHEN tm.budova_id IS NOT NULL AND (cs.min_distance IS NULL OR cs.min_distance >= 0.5) THEN 0
+            WHEN tm.budova_id IS NOT NULL THEN cs.min_distance - 0.1
+            ELSE cs.min_distance
+        END ASC
+      LIMIT 50
+    `,
+      [embeddingStr, wordPattern],
+    );
+
+    const transformedResults = results.map((row: any) => ({
+      id: row.id,
+      sourceDocumentId: row.source_document_id,
+      menoBudovy: row.meno_budovy,
+      adresa: row.adresa,
+      gpsSuradnice: row.gps_suradnice,
+      rokVystavby: row.rok_vystavby,
+      aktualnyVlastnik: row.aktualny_vlastnik,
+      rokZaradenia: row.rok_zaradenia,
+      historickyVyznam: row.historicky_vyznam,
+      zaznamyOObnove: row.zaznamy_o_obnove,
+      materialVonkajsejFasady: row.material_vonkajsej_fasady,
+      typStrechy: row.typ_strechy,
+      materialInterieru: row.material_interieru,
+      ineMaterialy: row.ine_materialy,
+      aktualnyStav: row.aktualny_stav,
+      kritickeMiesta: row.kriticke_miesta,
+      potrebneSanacie: row.potrebne_sanacie,
+      sucasneFotografie: row.sucasne_fotografie,
+      historickeFotografie: row.historicke_fotografie,
+      planyASchemy: row.plany_a_schemy,
+      harmonogramUdrzby: row.harmonogram_udrzby,
+      revizneZaznamy: row.revizne_zaznamy,
+      ochranneZony: row.ochranne_zony,
+      povoleniaNaZasahy: row.povolenia_na_zasahy,
+      legislativneObmedzenia: row.legislativne_obmedzenia,
+      digitalneVykresy: row.digitalne_vykresy,
+      archeologickeVyskumy: row.archeologicke_vyskumy,
+      chemickeAnalyzy: row.chemicke_analyzy,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
+
+    res.json(transformedResults);
   } catch (error) {
     console.error("Error in semantic search:", error);
     res.status(500).json({ error: "Failed to perform semantic search" });

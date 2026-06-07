@@ -4,7 +4,7 @@ import os
 from utils.config_loader import CONFIG
 
 def get_db_connection():
-    """Vytvorí spojenie s PostgreSQL databázou."""
+    """Create a PostgreSQL database connection."""
     database = os.getenv("DB_NAME")
     user = os.getenv("DB_USER")
     password = os.getenv("DB_PASSWORD")

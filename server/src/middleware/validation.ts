@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { z, ZodError, ZodSchema, ZodIssue } from "zod";
 
-// Rozšírenie Request typu pre validované dáta
 declare global {
   namespace Express {
     interface Request {
@@ -10,6 +9,10 @@ declare global {
   }
 }
 
+/**
+ * Middleware for validating request body, query or params using Zod schema.
+ * Validated data is available at req.validatedData
+ */
 export const validate =
   (schema: ZodSchema, source: "body" | "query" | "params" = "body") =>
   (req: Request, res: Response, next: NextFunction) => {
@@ -33,35 +36,46 @@ export const validate =
     }
   };
 
-const optionalNonNegativeIntFromString = (fieldName: string) =>
-  z
+// ============================================
+// BUILDINGS SCHEMAS
+// ============================================
+
+// Filter query params
+export const filterQuerySchema = z.object({
+  rokVystavbyOd: z
     .string()
     .optional()
     .refine((val) => !val || (!isNaN(parseInt(val)) && parseInt(val) >= 0), {
-      message: `${fieldName} musí byť platné kladné číslo`,
+      message: "rokVystavbyOd musí byť platné kladné číslo",
     })
-    .transform((val) => (val ? parseInt(val) : undefined));
-
-const optionalShortString = (fieldName: string) =>
-  z.string().max(100, `${fieldName} nesmie presiahnuť 100 znakov`).optional();
-
-export const idParamSchema = z.object({
-  id: z
+    .transform((val) => (val ? parseInt(val) : undefined)),
+  rokVystavbyDo: z
     .string()
-    .refine((val) => !isNaN(parseInt(val)) && parseInt(val) > 0, {
-      message: "ID musí byť platné kladné číslo",
+    .optional()
+    .refine((val) => !val || (!isNaN(parseInt(val)) && parseInt(val) >= 0), {
+      message: "rokVystavbyDo musí byť platné kladné číslo",
     })
-    .transform((val) => parseInt(val)),
-});
-
-export const filterQuerySchema = z.object({
-  rokVystavbyOd: optionalNonNegativeIntFromString("rokVystavbyOd"),
-  rokVystavbyDo: optionalNonNegativeIntFromString("rokVystavbyDo"),
-  typStrechy: optionalShortString("typStrechy"),
-  materialFasady: optionalShortString("materialFasady"),
-  materialInterieru: optionalShortString("materialInterieru"),
-  aktualnyStav: optionalShortString("aktualnyStav"),
-  obdobie: optionalShortString("obdobie"),
+    .transform((val) => (val ? parseInt(val) : undefined)),
+  typStrechy: z
+    .string()
+    .max(100, "typStrechy nesmie presiahnuť 100 znakov")
+    .optional(),
+  materialFasady: z
+    .string()
+    .max(100, "materialFasady nesmie presiahnuť 100 znakov")
+    .optional(),
+  materialInterieru: z
+    .string()
+    .max(100, "materialInterieru nesmie presiahnuť 100 znakov")
+    .optional(),
+  aktualnyStav: z
+    .string()
+    .max(100, "aktualnyStav nesmie presiahnuť 100 znakov")
+    .optional(),
+  obdobie: z
+    .string()
+    .max(100, "obdobie nesmie presiahnuť 100 znakov")
+    .optional(),
 });
 
 export const searchBodySchema = z.object({
@@ -72,9 +86,34 @@ export const searchBodySchema = z.object({
     .trim(),
 });
 
-export const buildingIdParamSchema = idParamSchema;
-export const documentIdParamSchema = idParamSchema;
+export const buildingIdParamSchema = z.object({
+  id: z
+    .string()
+    .refine((val) => !isNaN(parseInt(val)) && parseInt(val) > 0, {
+      message: "ID musí byť platné kladné číslo",
+    })
+    .transform((val) => parseInt(val)),
+});
 
+// ============================================
+// ADMIN SCHEMAS
+// ============================================
+
+// Document ID param
+export const documentIdParamSchema = z.object({
+  id: z
+    .string()
+    .refine((val) => !isNaN(parseInt(val)) && parseInt(val) > 0, {
+      message: "ID musí byť platné kladné číslo",
+    })
+    .transform((val) => parseInt(val)),
+});
+
+// ============================================
+// UPLOAD SCHEMAS
+// ============================================
+
+// Upload body (multipart form data - enableInference flag)
 export const uploadBodySchema = z.object({
   enableInference: z
     .string()
@@ -82,6 +121,7 @@ export const uploadBodySchema = z.object({
     .transform((val) => val === "true"),
 });
 
+// Session ID param for progress tracking
 export const sessionIdParamSchema = z.object({
   sessionId: z
     .string()
@@ -93,11 +133,13 @@ export const sessionIdParamSchema = z.object({
     ),
 });
 
+// ============================================
+// HELPER TYPES
+// ============================================
+
 export type FilterQuery = z.infer<typeof filterQuerySchema>;
 export type SearchBody = z.infer<typeof searchBodySchema>;
-export type IdParam = z.infer<typeof idParamSchema>;
-// Aliasy pre kompatibilitu so starým kódom.
-export type BuildingIdParam = IdParam;
-export type DocumentIdParam = IdParam;
+export type BuildingIdParam = z.infer<typeof buildingIdParamSchema>;
+export type DocumentIdParam = z.infer<typeof documentIdParamSchema>;
 export type UploadBody = z.infer<typeof uploadBodySchema>;
 export type SessionIdParam = z.infer<typeof sessionIdParamSchema>;

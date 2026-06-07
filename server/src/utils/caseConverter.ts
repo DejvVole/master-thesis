@@ -20,7 +20,7 @@ export function camelToSnake(str: string): string {
 }
 
 /**
- * Field name labels mapping (snake_case -> Slovak display name)
+ * Field name labels mapping (snake_case -> display name)
  * Single source of truth for field display names
  */
 export const FIELD_LABELS: Record<string, string> = {

@@ -104,47 +104,38 @@ export const buildingsInfoEmbed = pgTable(
       .notNull()
       .references(() => buildings_info.id, { onDelete: "cascade" }),
 
-    // Základné informácie
     menoBudovyEmb: vector("meno_budovy_emb"),
     adresaEmb: vector("adresa_emb"),
     gpsSuradniceEmb: vector("gps_suradnice_emb"),
     rokVystavbyEmb: vector("rok_vystavby_emb"),
     aktualnyVlastnikEmb: vector("aktualny_vlastnik_emb"),
 
-    // Historické údaje
     rokZaradeniaEmb: vector("rok_zaradenia_emb"),
     historickyVyznamEmb: vector("historicky_vyznam_emb"),
     zaznamyOObnoveEmb: vector("zaznamy_o_obnove_emb"),
 
-    // Materiály
     materialVonkajsejFasadyEmb: vector("material_vonkajsej_fasady_emb"),
     typStrechyEmb: vector("typ_strechy_emb"),
     materialInterieruEmb: vector("material_interieru_emb"),
     ineMaterialyEmb: vector("ine_materialy_emb"),
 
-    // Stav
     aktualnyStavEmb: vector("aktualny_stav_emb"),
     kritickeMiestaEmb: vector("kriticke_miesta_emb"),
     potrebneSanacieEmb: vector("potrebne_sanacie_emb"),
 
-    // Dokumentácia
     sucasneFotografieEmb: vector("sucasne_fotografie_emb"),
     historickeFotografieEmb: vector("historicke_fotografie_emb"),
     planyAShemyEmb: vector("plany_a_schemy_emb"),
 
-    // Údržba
     harmonogramUdrzbyEmb: vector("harmonogram_udrzby_emb"),
     revizneZaznamyEmb: vector("revizne_zaznamy_emb"),
     ochranneZonyEmb: vector("ochranne_zony_emb"),
 
-    // Legislatíva
     povoleniaNaZasahyEmb: vector("povolenia_na_zasahy_emb"),
     legislativneObmedzeniaEmb: vector("legislativne_obmedzenia_emb"),
 
-    // Digitálne
     digitalneVykresyEmb: vector("digitalne_vykresy_emb"),
 
-    // Výskum
     archeologickeVyskumyEmb: vector("archeologicke_vyskumy_emb"),
     chemickeAnalyzyEmb: vector("chemicke_analyzy_emb"),
 
@@ -155,7 +146,6 @@ export const buildingsInfoEmbed = pgTable(
   }),
 );
 
-// Číselník normalizovaných hodnôt
 export const normalizedValueOptions = pgTable("normalized_value_options", {
   id: serial("id").primaryKey(),
   category: text("category").notNull(),
@@ -167,7 +157,6 @@ export const normalizedValueOptions = pgTable("normalized_value_options", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// M:N prepojenie budov a normalizovaných hodnôt
 export const buildingsNormalizedValues = pgTable(
   "buildings_normalized_values",
   {
@@ -182,7 +171,6 @@ export const buildingsNormalizedValues = pgTable(
   },
 );
 
-// Tabuľka pre source metadata
 export const buildingsInfoSources = pgTable("buildings_info_sources", {
   id: serial("id").primaryKey(),
   budovaId: integer("budova_id")

@@ -1,0 +1,10 @@
+.git
+.gitignore
+**/.env
+**/.venv
+**/venv
+**/node_modules
+**/__pycache__
+backend/chroma_database
+backend/data/llm-outputs
+backend/src/testing/results

@@ -7,7 +7,6 @@ import { auth } from "../lib/auth";
 
 const router = Router();
 
-// Schema pre validáciu
 const createInvitationSchema = z.object({
   email: z.string().email("Neplatný email"),
   role: z.enum(["user", "admin"]).default("user"),
@@ -19,7 +18,6 @@ const acceptInvitationSchema = z.object({
   password: z.string().min(8, "Heslo musí mať aspoň 8 znakov"),
 });
 
-// POST /api/invitation - Vytvorenie novej pozvánky (len admin)
 router.post("/", async (req, res) => {
   try {
     const validation = createInvitationSchema.safeParse(req.body);
@@ -61,8 +59,6 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // Použiť better-auth magicLink na odoslanie emailu
-    // Token sa vygeneruje automaticky cez better-auth
     const result = await auth.api.signInMagicLink({
       body: {
         email,
@@ -77,7 +73,6 @@ router.post("/", async (req, res) => {
       throw new Error("Failed to send magic link");
     }
 
-    // Ulož pozvánku do našej tabuľky pre tracking (rola, kto pozval)
     await db.insert(invitation).values({
       email,
       role,
@@ -94,12 +89,11 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Handler pre overenie tokenu pozvánky
+// Verify invitation token handler
 const verifyTokenHandler = async (req: any, res: any) => {
   try {
     const { token } = req.params;
 
-    // Hľadaj token v better-auth verification tabuľke
     const ver = await db
       .select()
       .from(verification)
@@ -122,7 +116,6 @@ const verifyTokenHandler = async (req: any, res: any) => {
       });
     }
 
-    // value obsahuje JSON s emailom
     let email: string;
     try {
       const parsed = JSON.parse(verRecord.value);
@@ -134,7 +127,6 @@ const verifyTokenHandler = async (req: any, res: any) => {
       });
     }
 
-    // Skontroluj či user už neexistuje
     const existingUser = await db
       .select()
       .from(user)
@@ -148,7 +140,6 @@ const verifyTokenHandler = async (req: any, res: any) => {
       });
     }
 
-    // Nájdi role z invitation tabuľky
     const inv = await db
       .select()
       .from(invitation)
@@ -167,10 +158,8 @@ const verifyTokenHandler = async (req: any, res: any) => {
   }
 };
 
-// GET /api/invitation/verify/:token - Overenie tokenu pozvánky
 router.get("/verify/:token", verifyTokenHandler);
 
-// Handler pre prijatie pozvánky a vytvorenie účtu
 const acceptInvitationHandler = async (req: any, res: any) => {
   try {
     const validation = acceptInvitationSchema.safeParse(req.body);
@@ -183,7 +172,6 @@ const acceptInvitationHandler = async (req: any, res: any) => {
 
     const { token, name, password } = validation.data;
 
-    // Hľadaj token v better-auth verification tabuľke
     const ver = await db
       .select()
       .from(verification)
@@ -200,7 +188,6 @@ const acceptInvitationHandler = async (req: any, res: any) => {
       return res.status(400).json({ error: "Táto pozvánka vypršala" });
     }
 
-    // value obsahuje JSON s emailom
     let email: string;
     try {
       const parsed = JSON.parse(verRecord.value);
@@ -209,7 +196,6 @@ const acceptInvitationHandler = async (req: any, res: any) => {
       return res.status(400).json({ error: "Neplatný formát pozvánky" });
     }
 
-    // Skontroluj či email už nie je registrovaný
     const existingUser = await db
       .select()
       .from(user)
@@ -222,7 +208,6 @@ const acceptInvitationHandler = async (req: any, res: any) => {
       });
     }
 
-    // Nájdi role z invitation tabuľky
     const inv = await db
       .select()
       .from(invitation)
@@ -232,7 +217,6 @@ const acceptInvitationHandler = async (req: any, res: any) => {
 
     const role = inv.length > 0 ? inv[0].role : "user";
 
-    // Vytvor používateľa cez better-auth signUp
     const signUpResult = await auth.api.signUpEmail({
       body: {
         email,
@@ -245,7 +229,6 @@ const acceptInvitationHandler = async (req: any, res: any) => {
       throw new Error("Failed to create user");
     }
 
-    // Nastav správnu rolu (ak je admin)
     if (role === "admin") {
       await db
         .update(user)
@@ -253,13 +236,11 @@ const acceptInvitationHandler = async (req: any, res: any) => {
         .where(eq(user.id, signUpResult.user.id));
     }
 
-    // Označ email ako overený
     await db
       .update(user)
       .set({ emailVerified: true })
       .where(eq(user.id, signUpResult.user.id));
 
-    // Označ pozvánku ako použitú
     if (inv.length > 0) {
       await db
         .update(invitation)
@@ -267,7 +248,6 @@ const acceptInvitationHandler = async (req: any, res: any) => {
         .where(eq(invitation.id, inv[0].id));
     }
 
-    // Vymaž verification token
     await db.delete(verification).where(eq(verification.id, verRecord.id));
 
     res.json({
@@ -280,7 +260,6 @@ const acceptInvitationHandler = async (req: any, res: any) => {
   }
 };
 
-// POST /api/invitation/accept - Prijatie pozvánky (pre admin mount)
 router.post("/accept", acceptInvitationHandler);
 
 // GET /api/invitation/list
@@ -324,5 +303,4 @@ router.delete("/:id", async (req, res) => {
 
 export default router;
 
-// Export handlerov pre priame použitie v index.ts (bez auth middleware)
 export { verifyTokenHandler, acceptInvitationHandler };

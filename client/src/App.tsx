@@ -18,8 +18,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import { Toaster } from './components/ui/toaster';
 
-// Layout s navbar pre chránené stránky.
-// Render-uje `<Outlet />` pre vnorené routy.
 function ProtectedLayout() {
 	return (
 		<Box minH="100vh" bg="bg.canvas">
@@ -34,17 +32,17 @@ function App() {
 		<BrowserRouter>
 			<Toaster />
 			<Routes>
-				{/* Verejné routy */}
+				{/* Public routes */}
 				<Route path="/login" element={<LoginPage />} />
 				<Route path="/accept-invite" element={<AcceptInvitePage />} />
 
-				{/* Chránené routy — vyžadujú prihlásenie */}
+				{/* Protected routes */}
 				<Route element={<ProtectedRoute />}>
 					<Route element={<ProtectedLayout />}>
 						<Route path="/" element={<BuildingsSearch />} />
 						<Route path="/buildings/:id" element={<BuildingDetail />} />
 
-						{/* Admin routy — vyžadujú admin rolu */}
+						{/* Admin routes */}
 						<Route element={<AdminRoute />}>
 							<Route path="/admin" element={<Admin />} />
 							<Route path="/admin/users" element={<UserManagement />} />
@@ -52,7 +50,7 @@ function App() {
 					</Route>
 				</Route>
 
-				{/* Fallback — presmerovanie na hlavnú stránku */}
+				{/* Fallback */}
 				<Route path="*" element={<Navigate to="/" replace />} />
 			</Routes>
 		</BrowserRouter>

@@ -28,18 +28,17 @@ export const auth = betterAuth({
     }),
     magicLink({
       sendMagicLink: async ({ email, token, url }, request) => {
-        // Vytvor URL pre dokončenie registrácie
         const clientUrl = process.env.CLIENT_URL;
         const inviteUrl = `${clientUrl}/accept-invite?token=${token}`;
         await sendInvitationEmail(email, inviteUrl);
       },
-      expiresIn: 60 * 60 * 24 * 7, // 7 dní
-      disableSignUp: false, // Povoliť vytvorenie nového usera
+      expiresIn: 60 * 60 * 24 * 7, // 7 days
+      disableSignUp: false,
     }),
   ],
   session: {
-    expiresIn: 60 * 60 * 24 * 7, // 7 dní
-    updateAge: 60 * 60 * 24, // aktualizácia každých 24 hodín
+    expiresIn: 60 * 60 * 24 * 7, // 7 days
+    updateAge: 60 * 60 * 24, // refresh every 24 hours
     cookieCache: {
       enabled: true,
       maxAge: 5 * 60, // 5 minút cache

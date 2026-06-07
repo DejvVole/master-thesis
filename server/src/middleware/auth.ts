@@ -5,7 +5,6 @@ import { fromNodeHeaders } from "better-auth/node";
 // Typy pre role
 type UserRole = "user" | "admin";
 
-// Rozšírenie Express Request typu
 declare global {
   namespace Express {
     interface Request {
@@ -33,8 +32,8 @@ declare global {
 }
 
 /**
- * Middleware pre overenie autentifikácie
- * Pridáva user a session do req objektu
+ * Authentication middleware.
+ * Adds user and session to the req object.
  */
 export const requireAuth = async (
   req: Request,
@@ -53,7 +52,6 @@ export const requireAuth = async (
       });
     }
 
-    // Kontrola či nie je používateľ zabanovaný
     if (session.user.banned) {
       return res.status(403).json({
         error: "Účet zablokovaný",
@@ -74,8 +72,8 @@ export const requireAuth = async (
 };
 
 /**
- * Middleware pre overenie admin role
- * Používa sa po requireAuth
+ * Admin role middleware.
+ * Must be used after requireAuth.
  */
 export const requireAdmin = async (
   req: Request,
@@ -100,8 +98,8 @@ export const requireAdmin = async (
 };
 
 /**
- * Voliteľná autentifikácia - nepožaduje prihlásenie,
- * ale ak je používateľ prihlásený, pridá ho do req
+ * Optional authentication - does not require login,
+ * but if user is logged in, adds them to req
  */
 export const optionalAuth = async (
   req: Request,
@@ -119,7 +117,7 @@ export const optionalAuth = async (
     }
     next();
   } catch (error) {
-    // Pri chybe pokračujeme bez autentifikácie
+    // On error, continue without authentication
     next();
   }
 };
